@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.zhufucdev.xposed
 
 import android.hardware.Sensor

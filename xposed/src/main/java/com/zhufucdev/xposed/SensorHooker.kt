@@ -6,9 +6,9 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Handler
 import android.os.SystemClock
-import com.highcapable.yukihookapi.hook.core.YukiMemberHookCreator
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.classOf
+import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.param.HookParam
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.IntType
@@ -24,7 +24,7 @@ class SensorHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() {
     var toggle = Toggle.PRESENT
 
     override fun onHook() {
-        classOf<SensorManager>().hook {
+        classOf<SensorManager>().apply {
             hookRegisterMethod(
                 classOf<SensorEventListener>(),
                 classOf<Sensor>(),
@@ -81,31 +81,29 @@ class SensorHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() {
         }
     }
 
-    private fun YukiMemberHookCreator.hookRegisterMethod(vararg paramType: Any) {
-        injectMember {
-            method {
-                name = "registerListener"
-                param(*paramType)
-                returnType = BooleanType
-            }
-            replaceAny {
-                if (!scheduler.isWorking || toggle == Toggle.NONE)
-                    return@replaceAny callOriginal()
-                if (toggle == Toggle.BLOCK)
-                    return@replaceAny false
-                redirectToFakeHandler()
-            }
+    private fun Class<SensorManager>.hookRegisterMethod(vararg paramType: Any) {
+        method {
+            name = "registerListener"
+            param(*paramType)
+            returnType = BooleanType
         }
+            .hook {
+                replaceAny {
+                    if (!scheduler.isWorking || toggle == Toggle.NONE)
+                        return@replaceAny callOriginal()
+                    if (toggle == Toggle.BLOCK)
+                        return@replaceAny false
+                    redirectToFakeHandler()
+                }
+            }
     }
 
-    private fun YukiMemberHookCreator.hookUnregisterMethod(vararg paramType: Any) {
-        injectMember {
-            method {
-                name = "unregisterListener"
-                param(*paramType)
-                returnType = UnitType
-            }
-
+    private fun Class<SensorManager>.hookUnregisterMethod(vararg paramType: Any) {
+        method {
+            name = "unregisterListener"
+            param(*paramType)
+            returnType = UnitType
+        }.hook {
             replaceUnit {
                 if (!scheduler.isWorking || toggle == Toggle.NONE) {
                     callOriginal()
