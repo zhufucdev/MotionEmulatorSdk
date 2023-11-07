@@ -6,11 +6,18 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.get
 
+private const val SnapshotUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+private const val DeployUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+
 fun Project.publish(config: PublishingExtension.(name: String) -> Unit) {
     configure<PublishingExtension> {
         repositories {
             maven {
-                setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2")
+                if ((version as String).endsWith("snapshot", ignoreCase = true)) {
+                    setUrl(SnapshotUrl)
+                } else {
+                    setUrl(DeployUrl)
+                }
                 credentials {
                     username = findProperty("OSSRH_ID")?.toString() ?: error("OSSRH ID")
                     password = findProperty("OSSRH_PASSWORD")?.toString() ?: error("OSSRH password")
