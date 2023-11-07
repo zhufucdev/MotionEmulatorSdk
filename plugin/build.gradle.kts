@@ -1,10 +1,14 @@
 plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinAndroid)
+    signing
+    `maven-publish`
 }
 
+version = "1.0-SNAPSHOT"
+
 android {
-    namespace = "com.zhufucdev.me.plugin"
+    namespace = "com.zhufucdev.me"
     compileSdk = 34
 
     defaultConfig {
@@ -27,6 +31,12 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
@@ -43,4 +53,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.android.junit)
     androidTestImplementation(libs.espresso)
+}
+
+publish {
+    signing {
+        sign(publications.getAt(it))
+    }
 }

@@ -39,7 +39,6 @@ ktor-serialization = { group = "io.ktor", name = "ktor-client-serialization-jvm"
 ktor-serialization-protobuf = { group = "io.ktor", name = "ktor-serialization-kotlinx-protobuf", version.ref = "ktor" }
 ktor-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 
-
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

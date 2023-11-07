@@ -2,10 +2,14 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.kotlinSerialization)
+    `maven-publish`
+    signing
 }
 
+version = "1.0-SNAPSHOT"
+
 android {
-    namespace = "com.zhufucdev.me.stub"
+    namespace = "com.zhufucdev.me"
     compileSdk = 34
 
     defaultConfig {
@@ -30,8 +34,13 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-}
 
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+}
 
 dependencies {
     implementation(libs.kotlinx.serialization.json)
@@ -41,4 +50,14 @@ dependencies {
     implementation(libs.crunch)
     implementation(libs.maps)
     implementation(libs.maps.util)
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.android.junit)
+    androidTestImplementation(libs.espresso)
+}
+
+publish {
+    signing {
+        sign(publications.getAt(it))
+    }
 }

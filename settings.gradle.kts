@@ -21,6 +21,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "stub"
+rootProject.name = "MotionEmulatorSdk"
 include(":stub", ":plugin", ":xposed")
  
