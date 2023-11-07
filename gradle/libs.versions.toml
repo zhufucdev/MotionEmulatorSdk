@@ -1,0 +1,46 @@
+[versions]
+agp = "8.3.0-alpha12"
+kotlin = "1.9.0"
+kotlinxSerialization = "1.5.1"
+kotlinxCoroutine = "1.7.2"
+guava = "31.1-android"
+jnanoid = "2.0.0"
+crunch = "1.1.2"
+maps-util = "3.4.0"
+maps = "18.2.0"
+yukihook = "1.2.0"
+xposed = "82"
+core-ktx = "1.12.0"
+annotation = "1.7.0"
+junit = "4.13.2"
+androidJunit = "1.1.5"
+espresso = "3.5.1"
+ktor = "2.3.4"
+
+[libraries]
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+kotlinx-coroutine = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutine" }
+guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+jnanoid = { group = "com.aventrix.jnanoid", name = "jnanoid", version.ref = "jnanoid" }
+crunch = { group = "com.github.Redempt", name = "Crunch", version.ref = "crunch" }
+maps-util = { group = "com.google.maps.android", name = "android-maps-utils", version.ref = "maps-util" }
+maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "maps" }
+yukihook = { group = "com.highcapable.yukihookapi", name = "api", version.ref = "yukihook" }
+xposed = { group = "de.robv.android.xposed", name = "api", version.ref = "xposed" }
+corektx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
+annotation = { group = "androidx.annotation", name = "annotation-jvm", version.ref = "annotation" }
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+android-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidJunit" }
+espresso = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+ktor-core = { group = "io.ktor", name = "ktor-client-core-jvm", version.ref = "ktor" }
+ktor-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-serialization = { group = "io.ktor", name = "ktor-client-serialization-jvm", version.ref = "ktor" }
+ktor-serialization-protobuf = { group = "io.ktor", name = "ktor-serialization-kotlinx-protobuf", version.ref = "ktor" }
+ktor-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+
+
+[plugins]
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
