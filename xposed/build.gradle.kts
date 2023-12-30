@@ -43,7 +43,6 @@ android {
 dependencies {
     // Xposed
     implementation(libs.yukihook)
-    compileOnly(libs.xposed)
     // Internal
     implementation(project(":stub"))
     implementation(project(":plugin"))
