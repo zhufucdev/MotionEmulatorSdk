@@ -111,8 +111,8 @@ To initialize a WsServer instance, you just query it.
 import com.zhufucdev.me.plugin.MePlugin
 import android.content.Context
 
-val Context.meServer = MePlugin.queryServer(context)
-val Contex.meMethod = MePlugin.queryMethod(context) // You may also need this
+val Context.meServer get() = MePlugin.queryServer(context)
+val Context.meMethod get() = MePlugin.queryMethod(context) // You may also need this
 ```
 
 If it's not possible to query and do stuff, just query it a head of time and save it somewhere. 
