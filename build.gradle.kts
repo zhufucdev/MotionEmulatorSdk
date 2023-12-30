@@ -3,5 +3,18 @@ plugins {
     alias(libs.plugins.androidLibrary) apply false
     alias(libs.plugins.kotlinAndroid) apply false
     alias(libs.plugins.kotlinSerialization) apply false
+    alias(libs.plugins.gradleNexusPlugin)
+    `maven-publish`
 }
-true // Needed to make the Suppress annotation work for the plugins block
+
+group = "com.zhufucdev.me"
+version = "1.0.0"
+
+nexusPublishing {
+    repositories {
+        sonatype {  //only for users registered in Sonatype after 24 Feb 2021
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+        }
+    }
+}

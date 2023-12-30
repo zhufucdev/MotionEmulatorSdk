@@ -6,35 +6,15 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.get
 
-private const val SnapshotUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-private const val DeployUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-
 fun Project.publish(config: PublishingExtension.(name: String) -> Unit) {
     configure<PublishingExtension> {
-        repositories {
-            maven {
-                if ((version as String).endsWith("snapshot", ignoreCase = true)) {
-                    setUrl(SnapshotUrl)
-                } else {
-                    setUrl(DeployUrl)
-                }
-                credentials {
-                    username = findProperty("OSSRH_ID")?.toString() ?: error("OSSRH ID")
-                    password = findProperty("OSSRH_PASSWORD")?.toString() ?: error("OSSRH password")
-                }
-            }
-        }
-
         val publicationName = "maven"
         publications {
             create<MavenPublication>(publicationName) {
-                groupId = "com.zhufucdev.me"
-                artifactId = project.name
-                version = project.version as String
                 afterEvaluate { from(components["release"]) }
 
                 pom {
-                    name = "MotionEmulatorStub"
+                    name = "${project.group}:${project.name}"
                     description = "SDK for building Motion Emulator plug-ins"
                     url = "https://github.com/zhufucdev/MotionEmulatorSdk"
                     licenses {
@@ -47,6 +27,9 @@ fun Project.publish(config: PublishingExtension.(name: String) -> Unit) {
                         developer {
                             id = "zhufucdev"
                             name = "Steve Reed"
+                            email = "29772292+zhufucdev@users.noreply.github.com"
+                            organization = "zhufucdev"
+                            organizationUrl = "https://zhufucdev.com"
                         }
                     }
                     scm {

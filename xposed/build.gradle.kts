@@ -5,7 +5,8 @@ plugins {
     `maven-publish`
 }
 
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
+group = "com.zhufucdev.me"
 
 android {
     namespace = "com.zhufucdev.me"
