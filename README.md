@@ -116,7 +116,7 @@ val Contex.meMethod = MePlugin.queryMethod(context) // You may also need this
 ```
 
 If it's not possible to query and do stuff, just query it a head of time and save it somewhere. 
-Remember that ControllerReceiver in the last section, you will need it namely, and it must
+Remember that ControllerReceiver in the last section? You will need it namely, and it must
 be placed in the package root.
 
 This smells stinky, but what can you do to me? Probably nothing.
@@ -146,7 +146,7 @@ class ControllerReceiver : PluginBroadcastReceiver() {
 
 ## Schedule emulation
 
-Your plug-in is responsible for follow the order of Motion Emulator. I think it's probably fair
+Your plug-in is responsible for following the order of Motion Emulator. I think it's probably fair
 because it's already sent you the emulation data before making orders. 
 
 To make this easier, there's something called an AbstractScheduler.
@@ -177,14 +177,14 @@ object YourScheduler : AbstractScheduler() {
 
 ```
 
-Notice that we declare `YourScheduler` as an object (single instance)? It makes senses when you
+Notice that we declare `YourScheduler` as an object (single instance). It makes senses when you
 think of how many positions a phone can be at at the same time.
 
 ## Getting Xposed
 
 If you would write an Xposed plugin, you can write the mock location and sensor implementation
 all yourself, in which case I would appreciate you and copy your code to my plug-in if it were better.
-But you want do that anyway, and here's why.
+But you won't do that anyway, and here's why.
 
 There's something called the XposedScheduler, which has implemented all the mock aspects of AbstractScheduler.
 
@@ -193,7 +193,7 @@ There's something called the XposedScheduler, which has implemented all the mock
 - startTraceEmulation
 - startCellEmulation
 
-Like its name, it implements the mocking logic using Xposed. You just extend it and implement
+Like its name, it implements the mocking logic in Xposed. You just extend it and implement
 a few stuffs.
 
 ```kotlin
@@ -249,4 +249,4 @@ should be clear. You are supposed to come up with your own middleware protocol l
 [Content Provider Plugin](https://github.com/Xposed-Modules-Repo/com.zhufucdev.cp_plugin),
 or your own faking implementation like the 
 [Mock Location Plugin](https://github.com/zhufucdev/com.zhufucdev.mock_location_plugin).
-
+Wish you good luck. Either way, have fun.
