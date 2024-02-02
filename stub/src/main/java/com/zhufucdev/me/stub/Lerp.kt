@@ -1,7 +1,7 @@
 package com.zhufucdev.me.stub
 
 /**
- * Result for [ClosedShape.at]
+ * Result for [List.at]
  *
  * @param point the interpolated point
  * @param index the bigger index between which the point was interpolated
