@@ -6,7 +6,7 @@ plugins {
     signing
 }
 
-version = "1.0.0"
+version = rootProject.version
 group = "com.zhufucdev.me"
 
 android {
