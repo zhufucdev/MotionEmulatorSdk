@@ -26,9 +26,7 @@ import com.highcapable.yukihookapi.hook.factory.classOf
 import com.highcapable.yukihookapi.hook.factory.constructor
 import com.highcapable.yukihookapi.hook.factory.field
 import com.highcapable.yukihookapi.hook.factory.method
-import com.highcapable.yukihookapi.hook.log.loggerD
-import com.highcapable.yukihookapi.hook.log.loggerE
-import com.highcapable.yukihookapi.hook.log.loggerI
+import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.type.android.ActivityClass
 import com.highcapable.yukihookapi.hook.type.android.BundleClass
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
@@ -107,7 +105,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
      * Make network and cell providers invalid
      */
     private fun invalidateOthers() {
-        loggerI(TAG, "-- block other location methods --")
+        YLog.info(tag = TAG, msg = "-- block other location methods --")
 
         classOf<WifiManager>().apply {
             method {
@@ -207,7 +205,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
     }
 
     private fun hookGPS() {
-        loggerI(TAG, "-- hook GPS --")
+        YLog.info(tag = TAG, msg = "-- hook GPS --")
 
         val classOfLM = classOf<LocationManager>()
         classOfLM.apply {
@@ -318,7 +316,10 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
                         val method =
                             GpsStatus::class.members.firstOrNull { it.name == "setStatus" && it.parameters.size == 3 }
                         if (method == null) {
-                            loggerE(TAG, "method GpsStatus::setStatus is not provided")
+                            YLog.error(
+                                tag = TAG,
+                                msg = "method GpsStatus::setStatus is not provided"
+                            )
                             return@after
                         }
                         method.isAccessible = true
@@ -433,7 +434,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
                             return@after
 
                         result = fakeSatellites.also {
-                            loggerD(TAG, "${it.count()} satellites are fixed")
+                            YLog.debug(tag = TAG, msg = "${it.count()} satellites are fixed")
                         }
                     }
                 }
@@ -473,7 +474,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
      * Specially designed for it
      */
     private fun hookAMap(classLoader: ClassLoader, log: Boolean = false): Boolean {
-        loggerI(TAG, "-- hook Amap --")
+        YLog.info(tag = TAG, msg = "-- hook Amap --")
         var succeeded = true
 
         try {
@@ -501,7 +502,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
         } catch (e: ClassNotFoundException) {
             succeeded = false
             if (log) {
-                loggerE(TAG, "Failed to hook AMap location", e)
+                YLog.error(tag = TAG, msg = "Failed to hook AMap location", e = e)
             }
         }
 
@@ -520,7 +521,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
                                 ?: return@replaceAny callOriginal()
 
                             listenerOf[instance] = listener
-                            loggerD(TAG, "AMap location registered")
+                            YLog.debug(tag = TAG, msg = "AMap location registered")
                         }
                     }
 
@@ -530,7 +531,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
                 }
                     .hook {
                         replaceUnit {
-                            loggerI(TAG, "AMap location started")
+                            YLog.info(tag = TAG, msg = "AMap location started")
                             stateOf[instance] = true
 
                             val listener = listenerOf[instance] ?: return@replaceUnit
@@ -554,7 +555,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
                                 handler.post {
                                     method.invoke(listener, amap)
                                 }
-                                loggerD(TAG, "AMap location redirected")
+                                YLog.debug(tag = TAG, msg = "AMap location redirected")
                             }
                         }
                     }
@@ -566,7 +567,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
                     .hook {
                         replaceUnit {
                             stateOf[instance] = false
-                            loggerI(TAG, "AMap location stopped")
+                            YLog.info(tag = TAG, msg = "AMap location stopped")
 
                             val listener = listenerOf[instance] ?: return@replaceUnit
                             cancelRedirection(listener)
@@ -587,7 +588,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
         } catch (e: ClassNotFoundException) {
             succeeded = false
             if (log) {
-                loggerE(TAG, "Failed to hook AMap Location Client", e)
+                YLog.error(tag = TAG, msg = "Failed to hook AMap Location Client", e = e)
             }
         }
 
@@ -619,13 +620,13 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
     }
 
     private fun hookLocation() {
-        loggerI(TAG, "-- hook location --")
+        YLog.info(tag = TAG, msg = "-- hook location --")
 
         classOf<Location>().locationHook()
     }
 
     private fun testProviderTrick() {
-        loggerI(TAG, "-- make test provider undetectable --")
+        YLog.info(tag = TAG, msg = "-- make test provider undetectable --")
 
         classOf<Location>().apply {
             method {
@@ -655,7 +656,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
                 after {
                     val item = args(1).string()
                     if (item == Settings.Secure.ALLOW_MOCK_LOCATION) {
-                        loggerI(TAG, "Spoof mock location developer options")
+                        YLog.info(tag = TAG, msg = "Spoof mock location developer options")
                         result = "0"
                     }
                 }
@@ -667,7 +668,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
         }
             .hook {
                 replaceUnit {
-                    loggerI(TAG, "Block test provider removal")
+                    YLog.info(tag = TAG, msg = "Block test provider removal")
                 }
             }
     }
@@ -680,7 +681,7 @@ class LocationHooker(private val scheduler: XposedScheduler) : YukiBaseHooker() 
 
             val constructor = GnssStatus::class.constructors.firstOrNull { it.parameters.size >= 6 }
             if (constructor == null) {
-                loggerE(TAG, "GnssStatus constructor not available")
+                YLog.error(tag = TAG, msg = "GnssStatus constructor not available")
                 return null
             }
 
