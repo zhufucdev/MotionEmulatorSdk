@@ -21,6 +21,7 @@ import com.zhufucdev.me.stub.generateSaltedTrace
 import com.zhufucdev.me.stub.toPoint
 import com.zhufucdev.me.plugin.AbstractScheduler
 import com.zhufucdev.me.plugin.ServerScope
+import com.zhufucdev.me.stub.Toggle
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -135,17 +136,19 @@ abstract class XposedScheduler : AbstractScheduler() {
         }
     }
 
-    override suspend fun ServerScope.startTraceEmulation(trace: Trace) {
-        val salted = trace.generateSaltedTrace()
-        var traceInterp = salted.at(0F, MapProjector)
-        while (isWorking && loopProgress <= 1) {
-            val interp = salted.at(loopProgress, MapProjector, traceInterp)
-            traceInterp = interp
-            mLocation = interp.point.toPoint(trace.coordinateSystem)
-            locationHooker.raise(interp.point.toPoint())
+    override suspend fun ServerScope.startTraceEmulation(trace: Box<Trace>) {
+        if (trace.status == Toggle.PRESENT) {
+            val salted = trace.value!!.generateSaltedTrace()
+            var traceInterp = salted.at(0F, MapProjector)
+            while (isWorking && loopProgress <= 1) {
+                val interp = salted.at(loopProgress, MapProjector, traceInterp)
+                traceInterp = interp
+                mLocation = interp.point.toPoint(trace.value!!.coordinateSystem)
+                locationHooker.raise(interp.point.toPoint())
 
-            sendProgress(intermediate)
-            delay(1000)
+                sendProgress(intermediate)
+                delay(1000)
+            }
         }
     }
 

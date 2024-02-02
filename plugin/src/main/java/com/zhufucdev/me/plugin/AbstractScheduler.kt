@@ -3,10 +3,13 @@ package com.zhufucdev.me.plugin
 import android.os.SystemClock
 import com.zhufucdev.me.stub.Box
 import com.zhufucdev.me.stub.CellTimeline
+import com.zhufucdev.me.stub.EmptyBox
 import com.zhufucdev.me.stub.Emulation
 import com.zhufucdev.me.stub.EmulationInfo
 import com.zhufucdev.me.stub.Motion
+import com.zhufucdev.me.stub.Toggle
 import com.zhufucdev.me.stub.Trace
+import com.zhufucdev.me.stub.duration
 import com.zhufucdev.me.stub.length
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -41,8 +44,20 @@ abstract class AbstractScheduler {
     protected val loopProgress get() = (loopElapsed / duration / 1000).toFloat()
 
     protected suspend fun ServerScope.startEmulation(emulation: Emulation) {
-        length = emulation.trace.length()
-        duration = length / emulation.velocity // in seconds
+        if (emulation.trace.status == Toggle.PRESENT) {
+            length = emulation.trace.value!!.length()
+            duration = length / emulation.velocity
+        } else if (emulation.motion.status == Toggle.PRESENT) {
+            length = 0.0
+            duration = emulation.motion.value!!.moments.duration().toDouble()
+        } else if (emulation.cells.status == Toggle.PRESENT) {
+            length = 0.0
+            duration = emulation.cells.value!!.moments.duration().toDouble()
+        } else {
+            length = 0.0
+            duration = -1.0
+        }
+
         satellites = emulation.satelliteCount
 
         sendStarted(EmulationInfo(duration, length, packageName))
@@ -82,7 +97,7 @@ abstract class AbstractScheduler {
     open suspend fun ServerScope.startMotionSimulation(motion: Box<Motion>) {
     }
 
-    open suspend fun ServerScope.startTraceEmulation(trace: Trace) {
+    open suspend fun ServerScope.startTraceEmulation(trace: Box<Trace>) {
     }
 
     open suspend fun ServerScope.startCellEmulation(cells: Box<CellTimeline>) {

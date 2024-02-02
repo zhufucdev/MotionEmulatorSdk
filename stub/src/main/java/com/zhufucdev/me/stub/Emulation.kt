@@ -14,7 +14,7 @@ import kotlinx.serialization.serializer
 
 @Serializable(EmulationSerializer::class)
 data class Emulation(
-    val trace: Trace,
+    val trace: Box<Trace>,
     val motion: Box<Motion>,
     val cells: Box<CellTimeline>,
     val velocity: Double,
@@ -34,7 +34,7 @@ class EmulationSerializer : KSerializer<Emulation> {
         }
 
     override fun deserialize(decoder: Decoder): Emulation = decoder.decodeStructure(descriptor) {
-        var trace: Trace? = null
+        var trace: Box<Trace>? = null
         var motion: Box<Motion> = EmptyBox()
         var cells: Box<CellTimeline> = EmptyBox()
         var velocity: Double? = null
@@ -44,7 +44,7 @@ class EmulationSerializer : KSerializer<Emulation> {
         loop@ while (true) {
             when (val index = decodeElementIndex(descriptor)) {
                 DECODE_DONE -> break@loop
-                0 -> trace = decodeSerializableElement(descriptor, index, serializer())
+                0 -> trace = Box.decodeFromString(decodeStringElement(descriptor, index))
                 1 -> motion =
                     Box.decodeFromString(decodeStringElement(descriptor, index))
 
@@ -67,7 +67,7 @@ class EmulationSerializer : KSerializer<Emulation> {
 
     override fun serialize(encoder: Encoder, value: Emulation) =
         encoder.encodeStructure(descriptor) {
-            encodeSerializableElement(descriptor, 0, serializer(), value.trace)
+            encodeStringElement(descriptor, 0, value.trace.encodeToString())
             encodeStringElement(descriptor, 1, value.motion.encodeToString())
             encodeStringElement(descriptor, 2, value.cells.encodeToString())
             encodeDoubleElement(descriptor, 3, value.velocity)

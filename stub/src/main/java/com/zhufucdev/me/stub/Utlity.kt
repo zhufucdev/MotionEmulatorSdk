@@ -107,13 +107,7 @@ fun Trace.length(): Double {
     return sum
 }
 
-fun Double.toFixed(n: Int): String {
-    val df = DecimalFormat(buildString {
-        append("#.")
-        repeat(n) {
-            append("#")
-        }
-    })
-    df.roundingMode = RoundingMode.HALF_UP
-    return df.format(this)
-}
+/**
+ * Duration of a timeline ([List]<[Moment]>)
+ */
+fun <T : Moment> List<T>.duration() = lastOrNull()?.elapsed ?: 0f
