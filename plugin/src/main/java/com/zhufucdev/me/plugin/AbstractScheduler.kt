@@ -44,18 +44,23 @@ abstract class AbstractScheduler {
     protected val loopProgress get() = (loopElapsed / duration / 1000).toFloat()
 
     protected suspend fun ServerScope.startEmulation(emulation: Emulation) {
-        if (emulation.trace.status == Toggle.PRESENT) {
-            length = emulation.trace.value!!.length()
-            duration = length / emulation.velocity
-        } else if (emulation.motion.status == Toggle.PRESENT) {
-            length = 0.0
-            duration = emulation.motion.value!!.moments.duration().toDouble()
-        } else if (emulation.cells.status == Toggle.PRESENT) {
-            length = 0.0
-            duration = emulation.cells.value!!.moments.duration().toDouble()
-        } else {
-            length = 0.0
-            duration = -1.0
+        when {
+            emulation.trace.status == Toggle.PRESENT -> {
+                length = emulation.trace.value!!.length()
+                duration = length / emulation.velocity
+            }
+            emulation.motion.status == Toggle.PRESENT -> {
+                length = 0.0
+                duration = emulation.motion.value!!.moments.duration().toDouble()
+            }
+            emulation.cells.status == Toggle.PRESENT -> {
+                length = 0.0
+                duration = emulation.cells.value!!.moments.duration().toDouble()
+            }
+            else -> {
+                length = 0.0
+                duration = -1.0
+            }
         }
 
         satellites = emulation.satelliteCount
