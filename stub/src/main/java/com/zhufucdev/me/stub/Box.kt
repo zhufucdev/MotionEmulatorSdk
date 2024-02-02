@@ -59,3 +59,11 @@ inline fun <reified T> Box<T>.encodeToString(): String =
 class MutableBox<T>(var value: T)
 
 fun <T> T.mutbox() = MutableBox(this)
+
+fun <T : Data> Box<T>.ref() =
+    when (this) {
+        is EmptyBox<T> -> EMPTY_REF
+        is BlockBox<T> -> BLOCK_REF
+        else -> value?.id ?: NULL_REF
+    }
+
