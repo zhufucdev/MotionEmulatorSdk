@@ -1,5 +1,5 @@
 [versions]
-agp = "8.4.0-alpha07"
+agp = "8.4.0-alpha08"
 kotlin = "1.9.0"
 gnp = "1.3.0"
 kotlinxSerialization = "1.5.1"
