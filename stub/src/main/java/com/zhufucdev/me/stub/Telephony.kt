@@ -1,23 +1,31 @@
 package com.zhufucdev.me.stub
 
 import android.annotation.SuppressLint
-import android.os.*
+import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
 import android.os.Parcelable.Creator
-import android.telephony.*
+import android.telephony.CellInfo
+import android.telephony.CellLocation
+import android.telephony.NeighboringCellInfo
+import android.telephony.TelephonyManager
 import android.telephony.cdma.CdmaCellLocation
 import android.telephony.gsm.GsmCellLocation
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ByteArraySerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.serialDescriptor
-import kotlinx.serialization.encoding.*
+import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.CompositeDecoder.Companion.DECODE_DONE
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToStream
-import java.io.OutputStream
-import java.text.DateFormat
+import kotlinx.serialization.encoding.CompositeEncoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 
 /**
  * A snapshot taken from [TelephonyManager]
@@ -33,18 +41,8 @@ data class CellMoment(
 @Serializable
 data class CellTimeline(
     override val id: String,
-    val name: String? = null,
-    val time: Long,
     val moments: List<CellMoment>
-) : Data {
-    override fun getDisplayName(format: DateFormat): String =
-        name.takeIf { !it.isNullOrEmpty() } ?: format.dateString(time)
-
-    @OptIn(ExperimentalSerializationApi::class)
-    override fun writeTo(stream: OutputStream) {
-        Json.encodeToStream(kotlinx.serialization.serializer(), this, stream)
-    }
-}
+) : Data
 
 class CellSerializer : KSerializer<CellMoment> {
     override val descriptor: SerialDescriptor =

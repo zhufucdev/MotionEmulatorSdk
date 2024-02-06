@@ -1,8 +1,7 @@
 package com.zhufucdev.me.stub
 
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.serialDescriptor
@@ -11,11 +10,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToStream
 import kotlinx.serialization.serializer
-import java.io.OutputStream
-import java.text.DateFormat
 
 /**
  * A location on the Earth. Get it?
@@ -55,18 +50,10 @@ class Point : Vector2D {
 @Serializable(TraceSerializer::class)
 data class Trace(
     override val id: String,
-    val name: String,
     override val points: List<Point>,
     val coordinateSystem: CoordinateSystem = CoordinateSystem.GCJ02,
     val salt: Salt2dData? = null
-) : Data, ClosedShape {
-    override fun getDisplayName(format: DateFormat): String = name
-
-    @OptIn(ExperimentalSerializationApi::class)
-    override fun writeTo(stream: OutputStream) {
-        Json.encodeToStream(kotlinx.serialization.serializer(), this, stream)
-    }
-}
+) : Data, ClosedShape
 
 enum class CoordinateSystem {
     /**
@@ -88,14 +75,12 @@ class TraceSerializer : KSerializer<Trace> {
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor("$SERIALIZATION_ID.data.Trace") {
             element("id", serialDescriptor<Int>())
-            element("name", serialDescriptor<String>())
             element("coordSys", serialDescriptor<CoordinateSystem>(), isOptional = true)
             element("points", serialDescriptor<Point>())
             element("salt", serialDescriptor<Salt2dData>(), isOptional = true)
         }
 
     override fun deserialize(decoder: Decoder): Trace = decoder.decodeStructure(descriptor) {
-        var name = ""
         var id = ""
         var coordinateSystem = CoordinateSystem.GCJ02
         var points: List<Point> = emptyList()
@@ -104,24 +89,22 @@ class TraceSerializer : KSerializer<Trace> {
             when (val index = decodeElementIndex(descriptor)) {
                 DECODE_DONE -> break@loop
                 0 -> id = decodeStringElement(descriptor, index)
-                1 -> name = decodeStringElement(descriptor, index)
-                2 -> coordinateSystem = decodeSerializableElement(descriptor, index, serializer())
-                3 -> points = decodeSerializableElement(descriptor, index, serializer())
-                4 -> salt = decodeSerializableElement(descriptor, index, serializer<Salt2dData>())
+                1 -> coordinateSystem = decodeSerializableElement(descriptor, index, serializer())
+                2 -> points = decodeSerializableElement(descriptor, index, serializer())
+                3 -> salt = decodeSerializableElement(descriptor, index, serializer<Salt2dData>())
             }
         }
 
-        Trace(id, name, points.map { Point(it.latitude, it.longitude, coordinateSystem) }, coordinateSystem, salt)
+        Trace(id, points.map { Point(it.latitude, it.longitude, coordinateSystem) }, coordinateSystem, salt)
     }
 
     override fun serialize(encoder: Encoder, value: Trace) =
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.id)
-            encodeStringElement(descriptor, 1, value.name)
-            encodeSerializableElement(descriptor, 2, serializer(), value.coordinateSystem)
-            encodeSerializableElement(descriptor, 3, serializer(), value.points)
+            encodeSerializableElement(descriptor, 1, serializer(), value.coordinateSystem)
+            encodeSerializableElement(descriptor, 2, serializer(), value.points)
             value.salt?.let {
-                encodeSerializableElement(descriptor, 4, serializer(), it)
+                encodeSerializableElement(descriptor, 3, serializer(), it)
             }
         }
 

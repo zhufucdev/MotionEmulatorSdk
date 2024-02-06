@@ -1,11 +1,6 @@
 package com.zhufucdev.me.stub
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToStream
-import java.io.OutputStream
-import java.text.DateFormat
 
 /**
  * Basic motion record unit
@@ -26,16 +21,6 @@ data class MotionMoment(override var elapsed: Float, val data: MutableMap<Int, F
 @Serializable
 data class Motion(
     override val id: String,
-    val name: String? = null,
-    val time: Long,
     val moments: List<MotionMoment>,
     val sensorsInvolved: List<Int>
-) : Data {
-    override fun getDisplayName(format: DateFormat): String =
-        name.takeIf { !it.isNullOrEmpty() } ?: format.dateString(time)
-
-    @OptIn(ExperimentalSerializationApi::class)
-    override fun writeTo(stream: OutputStream) {
-        Json.encodeToStream(kotlinx.serialization.serializer(), this, stream)
-    }
-}
+) : Data

@@ -1,5 +1,6 @@
 package com.zhufucdev.me.stub
 
+import kotlinx.serialization.Serializable
 import java.io.OutputStream
 import java.text.DateFormat
 
@@ -9,6 +10,7 @@ import java.text.DateFormat
  */
 interface Data {
     val id: String
-    fun getDisplayName(format: DateFormat): String
-    fun writeTo(stream: OutputStream)
 }
+
+@Serializable
+data class Metadata(val creationTime: Long, val name: String? = null)

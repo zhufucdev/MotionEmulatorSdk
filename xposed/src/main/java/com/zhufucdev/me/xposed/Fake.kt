@@ -152,7 +152,6 @@ fun Motion.validPart(): Motion {
 
     return Motion(
         id = id,
-        time = time,
         moments = moments.subList(start, end),
         sensorsInvolved = sensorsInvolved
     )
