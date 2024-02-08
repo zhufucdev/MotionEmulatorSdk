@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.zhufucdev.me"
-version = "1.1.2"
+version = "1.1.3"
 
 nexusPublishing {
     repositories {
