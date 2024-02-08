@@ -29,7 +29,10 @@ class Point : Vector2D {
     /**
      * Constructs a [Point], in a given coordinate system
      */
-    constructor(latitude: Double, longitude: Double, coordinateSystem: CoordinateSystem) : super(latitude, longitude) {
+    constructor(latitude: Double, longitude: Double, coordinateSystem: CoordinateSystem) : super(
+        latitude,
+        longitude
+    ) {
         this.coordinateSystem = coordinateSystem
     }
 
@@ -95,7 +98,12 @@ class TraceSerializer : KSerializer<Trace> {
             }
         }
 
-        Trace(id, points.map { Point(it.latitude, it.longitude, coordinateSystem) }, coordinateSystem, salt)
+        Trace(
+            id,
+            points.map { Point(it.latitude, it.longitude, coordinateSystem) },
+            coordinateSystem,
+            salt
+        )
     }
 
     override fun serialize(encoder: Encoder, value: Trace) =
@@ -114,61 +122,54 @@ class TraceSerializer : KSerializer<Trace> {
  * **This serializer doesn't come with coordination system support**
  */
 class PointSerializer : KSerializer<Point> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("$SERIALIZATION_ID.data.Point") {
-            element("latitude", serialDescriptor<Double>())
-            element("longitude", serialDescriptor<Double>())
-        }
+    private val delegateSerializer = serializer<DoubleArray>()
+    override val descriptor: SerialDescriptor = delegateSerializer.descriptor
 
-    override fun deserialize(decoder: Decoder): Point = decoder.decodeStructure(descriptor) {
-        var latitude = 0.0
-        var longitude = 0.0
-        loop@ while (true) {
-            when (val index = decodeElementIndex(descriptor)) {
-                DECODE_DONE -> break@loop
-                0 -> latitude = decodeDoubleElement(descriptor, index)
-                1 -> longitude = decodeDoubleElement(descriptor, index)
-            }
-        }
-
-        Point(latitude, longitude)
+    override fun deserialize(decoder: Decoder): Point {
+        val arr = decoder.decodeSerializableValue(delegateSerializer)
+        return Point(arr[0], arr[1])
     }
 
-    override fun serialize(encoder: Encoder, value: Point) =
-        encoder.encodeStructure(descriptor) {
-            encodeDoubleElement(descriptor, 0, value.latitude)
-            encodeDoubleElement(descriptor, 1, value.longitude)
-        }
+    override fun serialize(encoder: Encoder, value: Point) {
+        encoder.encodeSerializableValue(
+            delegateSerializer,
+            doubleArrayOf(value.latitude, value.longitude)
+        )
+    }
 }
 
 class PointSerializerCoord : KSerializer<Point> {
+    private val doubleArraySerializer = serializer<DoubleArray>()
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor("$SERIALIZATION_ID.data.Point") {
-            element("latitude", serialDescriptor<Double>())
-            element("longitude", serialDescriptor<Double>())
-            element("coordSys", serialDescriptor<CoordinateSystem>())
+            element("point", serialDescriptor<DoubleArray>())
+            element("coord", serialDescriptor<CoordinateSystem>())
         }
 
     override fun deserialize(decoder: Decoder): Point = decoder.decodeStructure(descriptor) {
-        var latitude = 0.0
-        var longitude = 0.0
+        var point: DoubleArray? = null
         var coordinateSystem = CoordinateSystem.WGS84
         loop@ while (true) {
             when (val index = decodeElementIndex(descriptor)) {
                 DECODE_DONE -> break@loop
-                0 -> latitude = decodeDoubleElement(descriptor, index)
-                1 -> longitude = decodeDoubleElement(descriptor, index)
-                2 -> coordinateSystem = decodeSerializableElement(descriptor, index, serializer())
+                0 -> point = decodeSerializableElement(descriptor, 0, doubleArraySerializer)
+                1 -> coordinateSystem = decodeSerializableElement(descriptor, index, serializer())
             }
         }
 
-        Point(latitude, longitude, coordinateSystem)
+        point ?: error("No location value")
+
+        Point(point[0], point[1], coordinateSystem)
     }
 
     override fun serialize(encoder: Encoder, value: Point) =
         encoder.encodeStructure(descriptor) {
-            encodeDoubleElement(descriptor, 0, value.latitude)
-            encodeDoubleElement(descriptor, 1, value.longitude)
-            encodeSerializableElement(descriptor, 2, serializer(), value.coordinateSystem)
+            encodeSerializableElement(
+                descriptor,
+                0,
+                doubleArraySerializer,
+                doubleArrayOf(value.latitude, value.longitude)
+            )
+            encodeSerializableElement(descriptor, 1, serializer(), value.coordinateSystem)
         }
 }

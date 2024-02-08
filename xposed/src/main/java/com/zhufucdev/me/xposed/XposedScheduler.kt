@@ -6,6 +6,8 @@ import android.hardware.Sensor
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.param.PackageParam
+import com.zhufucdev.me.plugin.AbstractScheduler
+import com.zhufucdev.me.plugin.ServerScope
 import com.zhufucdev.me.stub.Box
 import com.zhufucdev.me.stub.CellMoment
 import com.zhufucdev.me.stub.CellTimeline
@@ -13,15 +15,13 @@ import com.zhufucdev.me.stub.Intermediate
 import com.zhufucdev.me.stub.MapProjector
 import com.zhufucdev.me.stub.Method
 import com.zhufucdev.me.stub.Motion
-import com.zhufucdev.me.stub.MotionMoment
 import com.zhufucdev.me.stub.Point
+import com.zhufucdev.me.stub.Toggle
 import com.zhufucdev.me.stub.Trace
 import com.zhufucdev.me.stub.at
 import com.zhufucdev.me.stub.generateSaltedTrace
+import com.zhufucdev.me.stub.timespan
 import com.zhufucdev.me.stub.toPoint
-import com.zhufucdev.me.plugin.AbstractScheduler
-import com.zhufucdev.me.plugin.ServerScope
-import com.zhufucdev.me.stub.Toggle
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -84,15 +84,14 @@ abstract class XposedScheduler : AbstractScheduler() {
 
     val location get() = mLocation ?: Point.zero
     val cells get() = mCellMoment ?: CellMoment(0F)
-    val motion = MotionMoment(0F, mutableMapOf())
 
     private val stepSensors = intArrayOf(Sensor.TYPE_STEP_COUNTER, Sensor.TYPE_STEP_DETECTOR)
 
     private var stepsCount: Int = -1
     override suspend fun ServerScope.startStepsEmulation(motion: Box<Motion>, velocity: Double) {
         sensorHooker.toggle = motion.status
-
-        if (motion.value != null && motion.value!!.sensorsInvolved.any { it in stepSensors }) {
+        val value = motion.value
+        if (value != null && value.timelines.keys.any { it in stepSensors }) {
             val pause = (1.2 / velocity).seconds
             if (stepsCount == -1) {
                 stepsCount =
@@ -100,12 +99,9 @@ abstract class XposedScheduler : AbstractScheduler() {
             }
             while (isWorking && loopProgress <= 1) {
                 val moment =
-                    MotionMoment(
-                        loopElapsed / 1000F,
-                        mutableMapOf(
-                            Sensor.TYPE_STEP_COUNTER to floatArrayOf(1F * stepsCount++),
-                            Sensor.TYPE_STEP_DETECTOR to floatArrayOf(1F)
-                        )
+                    mapOf(
+                        Sensor.TYPE_STEP_COUNTER to floatArrayOf(1F * stepsCount++),
+                        Sensor.TYPE_STEP_DETECTOR to floatArrayOf(1F)
                     )
                 sensorHooker.raise(moment)
 
@@ -117,17 +113,17 @@ abstract class XposedScheduler : AbstractScheduler() {
 
     override suspend fun ServerScope.startMotionSimulation(motion: Box<Motion>) {
         sensorHooker.toggle = motion.status
-        val partial = motion.value?.validPart()
+        val value = motion.value
 
-        if (partial != null && partial.sensorsInvolved.any { it !in stepSensors }) {
+        if (value != null && value.timelines.keys.any { it !in stepSensors }) {
             // data other than steps
             while (isWorking && loopProgress <= 1) {
-                var lastIndex = 0
-                while (isWorking && lastIndex < partial.moments.size && loopProgress <= 1) {
-                    val interp = partial.at(loopProgress, lastIndex)
+                var lastLerp : MotionLerp? = null
+                while (isWorking && loopProgress <= 1) {
+                    val interp = value.at(loopProgress, lastLerp)
+                    lastLerp = interp
 
-                    sensorHooker.raise(interp.moment)
-                    lastIndex = interp.index
+                    sensorHooker.raise(interp.timelines)
 
                     sendProgress(intermediate)
                     delay(100)

@@ -3,15 +3,14 @@
 package com.zhufucdev.me.xposed
 
 import android.annotation.SuppressLint
-import android.hardware.Sensor
 import android.telephony.*
 import android.telephony.cdma.CdmaCellLocation
 import android.telephony.gsm.GsmCellLocation
 import androidx.core.os.bundleOf
 import com.zhufucdev.me.stub.CellMoment
-import com.zhufucdev.me.stub.Moment
 import com.zhufucdev.me.stub.Motion
-import com.zhufucdev.me.stub.MotionMoment
+import com.zhufucdev.me.stub.RawSensorData
+import com.zhufucdev.me.stub.duration
 import com.zhufucdev.me.stub.minus
 import com.zhufucdev.me.stub.plus
 import com.zhufucdev.me.stub.times
@@ -21,151 +20,47 @@ import kotlin.math.sqrt
 /**
  * Result for [Motion.at]
  *
- * @param moment the interpolated data
- * @param index bigger index between which the moment was interpolated
+ * @param timelines the interpolated data
+ * @param nextIndexes you probably won't care, it's about the algorithm
  */
-data class MotionInterp(val moment: MotionMoment, val index: Int)
+data class MotionLerp(val timelines: Map<Int, RawSensorData>, val nextIndexes: Map<Int, Int>)
 
 /**
  * Interpolate a moment, given a [progress] valued between
  * 0 and 1
  *
  * Note that step data are not present and the returned
- * value may never exist
+ * value may never have existed
  *
- * @see [MotionInterp]
+ * @see [MotionLerp]
  */
-fun Motion.at(progress: Float, from: Int = 0): MotionInterp {
-    fun interp(progr: Float, current: FloatArray, last: FloatArray) =
+fun Motion.at(progress: Float, lastInterp: MotionLerp? = null): MotionLerp {
+    fun lerp(progr: Float, current: FloatArray, last: FloatArray) =
         (current - last) * progr + current
 
-    val duration = moments.last().elapsed - moments.first().elapsed
-    val start = moments.first().elapsed
-    val targetElapsed = duration * progress
-    val data = hashMapOf<Int, FloatArray>()
-
-    val stepTypes = listOf(Sensor.TYPE_STEP_COUNTER, Sensor.TYPE_STEP_DETECTOR)
-    val targetTypes = sensorsInvolved - stepTypes
-
-    var minIndex = moments.lastIndex
-
-    targetTypes.forEach { type ->
-        var last: MotionMoment? = null
-        for (i in from until moments.size) {
-            val current = moments[i]
-            if (!current.data.containsKey(type)) {
-                continue
+    if (timelines.isEmpty()) {
+        return MotionLerp(emptyMap(), emptyMap())
+    } else {
+        val duration = timelines.duration()
+        val elapsed = duration * progress
+        val indexes = lastInterp?.nextIndexes?.toMutableMap() ?: mutableMapOf()
+        val data = timelines.mapValues { (t, u) ->
+            val lastIndex = indexes[t] ?: 0
+            var nextIndex = lastIndex
+            while (nextIndex < u.size && u[nextIndex].elapsed < elapsed) {
+                nextIndex++
             }
-
-            if (current.elapsed - start <= targetElapsed) {
-                last = current
-                continue
-            }
-
-            // current is later than target elapsed
-            if (from > 0) {
-                if (last == null) {
-                    // try to find a moment with specific type
-                    // and is earlier than the current one
-                    for (j in from - 1 downTo 0) {
-                        if (moments[i].data.containsKey(type) && moments[i].elapsed < targetElapsed) {
-                            last = moments[i]
-                            break
-                        }
-                    }
-                }
-                if (last != null) {
-                    data[type] = interp(
-                        (targetElapsed - last.elapsed + start) / (current.elapsed - last.elapsed),
-                        current.data[type]!!,
-                        last.data[type]!!
-                    )
-                }
+            indexes[t] = nextIndex
+            if (nextIndex > lastIndex) {
+                val p =
+                    (elapsed - u[lastIndex].elapsed) / (u[nextIndex].elapsed - u[lastIndex].elapsed)
+                lerp(p, u[nextIndex].data, u[lastIndex].data)
             } else {
-                // if the current one is the first element
-                // do a reverse interpolation
-                for (j in i + 1 until moments.size) {
-                    val next = moments[j]
-                    if (next.data.containsKey(type) && next.elapsed - start > targetElapsed) {
-                        data[type] = interp(
-                            (targetElapsed - next.elapsed + start) / (next.elapsed - current.elapsed),
-                            next.data[type]!!,
-                            current.data[type]!!
-                        )
-                        break
-                    }
-                }
-            }
-
-            if (i < minIndex) {
-                minIndex = i
-            }
-            break
-        }
-    }
-    return MotionInterp(MotionMoment(targetElapsed, data), minIndex)
-}
-
-/**
- * Valid part is partition of a [Motion]
- * that presents stable motion data
- *
- * This method will only trim start and end
- */
-fun Motion.validPart(): Motion {
-    val detector = sensorsInvolved.contains(Sensor.TYPE_STEP_DETECTOR)
-    val counter = sensorsInvolved.contains(Sensor.TYPE_STEP_COUNTER)
-    val acc = sensorsInvolved.contains(Sensor.TYPE_ACCELEROMETER)
-    val linear = sensorsInvolved.contains(Sensor.TYPE_LINEAR_ACCELERATION)
-    if (!detector && !counter && !acc && !linear) {
-        return this // no enough data
-    }
-
-    fun lookup(reversed: Boolean): Int {
-        var detectorFlag = false
-        for (i in moments.indices.let { if (reversed) it.reversed() else it }) {
-            val moment = moments[i]
-            if (detector && !detectorFlag && moment.data[Sensor.TYPE_STEP_DETECTOR]?.first() == 1F) {
-                detectorFlag = true
-            }
-
-            val others =
-                counter && moment.data.containsKey(Sensor.TYPE_STEP_COUNTER)
-                        || linear && moment.data[Sensor.TYPE_LINEAR_ACCELERATION]?.length()
-                    ?.let { it < 1F } == true
-                        || acc
-                        && moment.data[Sensor.TYPE_ACCELEROMETER]?.filterHighPass()?.length()
-                    ?.let { it < 1F } == true
-
-            val flag =
-                detector && detectorFlag && others || !detector && others
-
-            if (flag) {
-                return i
+                u[nextIndex].data
             }
         }
-        return if (reversed) moments.lastIndex else 0
+        return MotionLerp(data, indexes)
     }
-
-    val start = lookup(false)
-    val end = lookup(true)
-
-    return Motion(
-        id = id,
-        moments = moments.subList(start, end),
-        sensorsInvolved = sensorsInvolved
-    )
-}
-
-/**
- * Get the time span of a timeline
- *
- * @return duration in seconds
- */
-fun List<Moment>.timespan(): Float {
-    if (isEmpty()) return 0F
-    if (size == 1) return first().elapsed
-    return last().elapsed - first().elapsed
 }
 
 /**

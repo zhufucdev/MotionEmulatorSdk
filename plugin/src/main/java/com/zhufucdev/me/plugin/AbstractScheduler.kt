@@ -3,12 +3,12 @@ package com.zhufucdev.me.plugin
 import android.os.SystemClock
 import com.zhufucdev.me.stub.Box
 import com.zhufucdev.me.stub.CellTimeline
-import com.zhufucdev.me.stub.EmptyBox
 import com.zhufucdev.me.stub.Emulation
 import com.zhufucdev.me.stub.EmulationInfo
 import com.zhufucdev.me.stub.Motion
 import com.zhufucdev.me.stub.Toggle
 import com.zhufucdev.me.stub.Trace
+import com.zhufucdev.me.stub.timespan
 import com.zhufucdev.me.stub.duration
 import com.zhufucdev.me.stub.length
 import kotlinx.coroutines.coroutineScope
@@ -51,11 +51,11 @@ abstract class AbstractScheduler {
             }
             emulation.motion.status == Toggle.PRESENT -> {
                 length = 0.0
-                duration = emulation.motion.value!!.moments.duration().toDouble()
+                duration = emulation.motion.value!!.timelines.duration().toDouble()
             }
             emulation.cells.status == Toggle.PRESENT -> {
                 length = 0.0
-                duration = emulation.cells.value!!.moments.duration().toDouble()
+                duration = emulation.cells.value!!.moments.timespan().toDouble()
             }
             else -> {
                 length = 0.0

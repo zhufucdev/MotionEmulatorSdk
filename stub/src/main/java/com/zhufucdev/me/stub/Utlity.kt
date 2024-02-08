@@ -4,14 +4,7 @@ import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import android.os.SystemClock
-import java.math.RoundingMode
-import java.text.DateFormat
-import java.text.DecimalFormat
-import java.util.*
 import kotlin.random.Random
-
-fun DateFormat.dateString(time: Long = System.currentTimeMillis()): String =
-    format(Date(time))
 
 const val SERIALIZATION_ID = "com.zhufucdev.motion_emulator"
 
@@ -54,11 +47,6 @@ fun Point.android(
 /**
  * Generate a salted trace, where all points are
  * involved with random factors
- *
- * @param mapProjector Requires projection in case
- * the trace's coordination system is not WGS84,
- * in which points will be project to WGS84, then
- * back to GCJ02
  */
 fun Trace.generateSaltedTrace(): List<Point> {
     val salt = this.salt
@@ -78,36 +66,31 @@ fun Trace.generateSaltedTrace(): List<Point> {
     }
 }
 
-fun estimateDistance(current: Point, last: Point) =
-    if (current.coordinateSystem == CoordinateSystem.WGS84 && last.coordinateSystem == CoordinateSystem.WGS84) {
+fun Pair<Point, Point>.estimateDistance() =
+    if (second.coordinateSystem == CoordinateSystem.WGS84 && first.coordinateSystem == CoordinateSystem.WGS84) {
         with(MapProjector) {
-            current.distanceIdeal(last)
+            second.distanceIdeal(first)
         }
-    } else if (current.coordinateSystem == CoordinateSystem.GCJ02 && last.coordinateSystem == CoordinateSystem.GCJ02) {
+    } else if (second.coordinateSystem == CoordinateSystem.GCJ02 && first.coordinateSystem == CoordinateSystem.GCJ02) {
         with(MapProjector) {
-            current.distance(last)
+            second.distance(first)
         }
     } else {
-        throw IllegalArgumentException("current comes with a different coordination " +
-                "system (${current.coordinateSystem.name}) than last")
+        throw IllegalArgumentException("second comes with a different coordination " +
+                "system (${second.coordinateSystem.name}) than first")
     }
 
 fun estimateSpeed(current: Pair<Point, Long>, last: Pair<Point, Long>) =
-    estimateDistance(current.first, last.first) / (current.second - last.second) * 1000
+    (last.first to current.first).estimateDistance() / (current.second - last.second) * 1000
 
 /**
- * Length of a trace, including the closing part
+ * Length of a trace, including the sealing
  */
 fun Trace.length(): Double {
     var sum = 0.0
     for (i in 1 until points.size) {
-        sum += estimateDistance(points[i], points[i - 1])
+        sum += (points[i] to points[i - 1]).estimateDistance()
     }
-    sum += estimateDistance(points.first(), points.last())
+    sum += (points.last() to points.first()).estimateDistance()
     return sum
 }
-
-/**
- * Duration of a timeline ([List]<[Moment]>)
- */
-fun <T : Moment> List<T>.duration() = lastOrNull()?.elapsed ?: 0f
